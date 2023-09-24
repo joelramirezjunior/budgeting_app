@@ -1,0 +1,26 @@
+# Dependency directories
+*/node_modules
+
+# Build files
+*/build
+
+# Environment variables file
+.env
+
+# Log files
+npm-debug.log*
+
+# Editor-specific files
+.vscode/
+.idea/
+
+# macOS metadata files
+.DS_Store
+__pycache__
+
+# Temporary files
+*.swp
+*~
+
+# Yarn integrity file
+.yarn-integrity
