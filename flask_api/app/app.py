@@ -2,13 +2,14 @@ from flask import Flask
 from flask_pymongo import PyMongo
 from mongoengine import connect
 from flask_cors import CORS, cross_origin
+import json
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={r"*": {"origins": "http://127.0.0.1:3000"}})
 
 
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/budgeting_app'
+app.config['MONGO_URI'] = 'mongodb://127.0.0.1:27017/budgeting_app'
 mongo = PyMongo(app)
 
 connect(host=app.config['MONGO_URI'])
@@ -26,6 +27,12 @@ def log_request_info():
     # Here you can specify what you want to log.
     app.logger.info('Headers: %s', request.headers)
     app.logger.info('Body: %s', request.get_data())
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
 
 @app.route('/')
 def index():
@@ -33,9 +40,13 @@ def index():
 
 @app.route('/add_transaction', methods=['POST', 'OPTIONS'])
 def add_transaction():
+
     if request.method == 'OPTIONS':
-        app.logger.info("Returning true to the origin")
-        return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
     
     app.logger.info('%s Request made successfully', request)
     schema = TransactionSchema()
@@ -58,9 +69,13 @@ def add_transaction():
 
 @app.route('/add_financial_info', methods=['POST', 'OPTIONS'])
 def add_financial_info():
+
     if request.method == 'OPTIONS':
-        app.logger.info("Returning true to the origin")
-        return json.dumps({'success':True}), 200, {'ContentType':'application/json'} 
+        response = make_response()
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "*")
+        response.headers.add('Access-Control-Allow-Methods', "*")
+        return response
     
     app.logger.info('%s Request made successfully', request)
     schema = TransactionSchema()
@@ -86,13 +101,12 @@ def add_financial_info():
 @app.route('/add_account', methods=['POST', 'OPTIONS'])
 def add_account():
     print("/add_account Received Request: ", request)
+    response = make_response()
     if request.method == 'OPTIONS':
-        response = make_response()
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add('Access-Control-Allow-Headers', "*")
         response.headers.add('Access-Control-Allow-Methods', "*")
         return response
-
     schema = AccountSchema()
     accounts = mongo.db.accounts
     json_data = request.get_json()
@@ -124,7 +138,13 @@ def add_account():
 
     # Return serialized data
     result = schema.dump(data)
-    return jsonify({'account_id': str(account_id), 'account': result})
+
+    response = make_response(jsonify({'account_id': str(account_id), 'account': result}), 200)
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add('Access-Control-Allow-Headers', "*")
+    response.headers.add('Access-Control-Allow-Methods', "*")
+
+    return response
 
 
 if __name__ == "__main__":

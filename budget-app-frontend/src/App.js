@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { Routes} from 'react-router-dom';
+import './App.css'; 
 
 const AccountForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -27,39 +29,39 @@ const AccountForm = ({ onSubmit }) => {
   return (
     <form onSubmit={handleSubmit}>
       <div>
-        <label>First Name</label>
         <input
           type="text"
           name="first_name"
           value={formData.first_name}
           onChange={handleInputChange}
+          placeholder="First Name"
         />
       </div>
       <div>
-        <label>Last Name</label>
         <input
           type="text"
           name="last_name"
           value={formData.last_name}
           onChange={handleInputChange}
+          placeholder="Last Name"
         />
       </div>
       <div>
-        <label>Email</label>
         <input
           type="email"
           name="email"
           value={formData.email}
           onChange={handleInputChange}
+          placeholder="Email"
         />
       </div>
       <div>
-        <label>Username</label>
         <input
           type="text"
           name="user_name"
           value={formData.user_name}
           onChange={handleInputChange}
+          placeholder="Username"
         />
       </div>
       <button type="submit">Create Account</button>
@@ -177,13 +179,14 @@ const AppContent = () => {
   
 
   return (
-    <div>
-      <h1>Account Creation</h1>
+    <div className="app-container">
+      <h1 className="app-title">Budgeting App</h1>
+      <h2>Account Creation</h2>
       <Routes>
         <Route path="/" element={<AccountForm onSubmit={handleSubmit} />} />
         <Route path="/financial-form" element={<FinancialForm />} />
       </Routes>
-      {accountInfo && <AccountInfo accountInfo={accountInfo} />}
+      {/* {accountInfo && <AccountInfo accountInfo={accountInfo} />} */}
     </div>
   );
 };
