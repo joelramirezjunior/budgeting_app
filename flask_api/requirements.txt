@@ -1,0 +1,7 @@
+flash==1.0.3
+Flask==2.3.3
+Flask-Cors==4.0.0
+Flask-PyMongo==2.3.0
+Flask-Testing==0.8.1
+marshmallow==3.20.1
+mongoengine==0.27.0

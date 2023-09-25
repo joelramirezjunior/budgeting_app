@@ -1,0 +1,22 @@
+version: '3'
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+  flask:
+    build:
+      context: ./flask_api
+      dockerfile: Dockerfile  # Change this to DockerFile if your file is named that way
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongo
+  react:
+    build:
+      context: ./budget-app-frontend
+      dockerfile: Dockerfile  # Change this to DockerFile if your file is named that way
+    ports:
+      - "3000:3000"
+    depends_on:
+      - flask

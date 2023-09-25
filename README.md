@@ -1,130 +1,100 @@
 # Budgeting App
 
-##### note very barebones Readme -- will be updated as I work on this and get it functional. 
-## Introduction
-
-Welcome to the Budgeting App, a full-stack application built with React and Flask. This app helps users create an account and manage their finances.
+A simple budgeting application built using React, Flask, and MongoDB. The application allows users to create accounts and add financial information for better budgeting.
 
 ## Features
 
-- User Account creation
-- Adding financial information like Retirement Amount, Savings, and Checking Account balance
+- Account creation with first name, last name, email, and username.
+- Add financial details like retirement amount, savings, and checkings.
+- Backend API built with Flask and MongoDB for data persistence.
+  
+## Technologies Used
 
-## Getting Started
+- Frontend: React.js
+- Backend: Flask, Python
+- Database: MongoDB
+- Containerization: Docker
 
-### Prerequisites
+## Prerequisites
 
-- Node.js
-- Python 3.x
-- MongoDB
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Setup
+## Quick Start
 
-1. **Clone the repository**
-    ```
-    git clone https://github.com/your-repo-link
-    ```
+### Clone the repository
 
-2. **Navigate to the frontend directory and install npm packages**
-    ```
-    cd frontend
-    npm install
-    ```
-
-3. **Navigate to the backend directory and install Python packages**
-    ```
-    cd ../backend
-    pip install -r requirements.txt
-    ```
-
-4. **Start MongoDB**
-
-    Make sure MongoDB is running locally. If not, you can start it with:
-    ```
-    mongod
-    ```
-
-### Running the App
-
-1. **Frontend**
-
-    Navigate to the frontend directory and start the React app:
-    ```
-    cd frontend
-    npm start
-    ```
-    The app will be available at `http://localhost:3000`.
-
-2. **Backend**
-
-    Navigate to the backend directory and start the Flask app:
-    ```
-    cd ../backend
-    python app.py
-    ```
-    The backend API will be available at `http://localhost:8000`.
-
-## File Structure
-
-### Frontend (`/frontend`)
-
-- `App.jsx`: The entry point of the React application.
-- `AccountForm.jsx`: Component for account creation.
-- `FinancialForm.jsx`: Component for entering financial details.
-- `AccountInfo.jsx`: (Optional) Component for displaying account information.
-
-### Backend (`/backend`)
-
-- `app.py`: The entry point for the Flask application.
-- `routes.py`: Contains all the route handlers.
-
-## Code Overview
-
-### Frontend
-
-We use React hooks and Axios for API calls. For instance, in `AppContent`:
-
-```jsx
-const handleSubmit = async (formData) => {
-  const response = await axios.post('http://127.0.0.1:5000/add_account', formData, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-};
+```bash
+git clone <repository_url>
+cd <repository_folder>
 ```
 
-### Backend
+### Build and Run the Application
 
-We use Flask and PyMongo for the backend. For example, in `add_account`:
+We use Docker Compose to manage and run the services. This will build the React frontend, Flask backend, and MongoDB database as separate services.
 
-```python
-@app.route('/add_account', methods=['POST', 'OPTIONS'])
-def add_account():
-    json_data = request.get_json()
-    accounts = mongo.db.accounts
-    account_id = accounts.insert_one(data).inserted_id
+```bash
+docker-compose up --build
 ```
 
-## API Endpoints
+After running the above command, you should have:
 
-### note: more to come eventually...just started writting this last night...or so.
+- React app running on `http://localhost:3000`
+- Flask API running on `http://localhost:5000`
+- MongoDB running on `localhost:27017`
 
-- POST `/add_account`: Adds a new account.
-- POST `/add_financial_info`: Adds financial information for an account.
+### Note for MontereyOS Users
 
-## Security
+If you are using MontereyOS and encounter an error stating that port 5000 is already in use, this may be because the AirPlay feature uses this port. To resolve this, go into your computer's preferences to disable AirPlay, and the application should run as expected.
 
-Sensitive information like names and emails are hashed before storing in the MongoDB database.
+## Directory Structure
+
+```
+.
+├── flask_api
+│   ├── app
+│   │   └── app.py
+│   └── Dockerfile
+├── budget-app-frontend
+│   ├── src
+│   │   └── App.js
+│   └── Dockerfile
+└── docker-compose.yml
+```
+
+### Frontend (React.js)
+
+The frontend is built using React.js. Here are some important files and their descriptions:
+
+- `App.js`: Main component where all routes and major logic reside.
+
+### Backend (Flask)
+
+The backend is built using Flask. Here are some important files and their descriptions:
+
+- `app/app.py`: This is where the Flask app and routes are defined. Note that it resides inside an `app` directory within the `flask_api` folder.
+- `models.py`: Contains the MongoDB models for storing data.
+
+## Endpoints
+
+### Flask API
+
+#### `POST /add_account`
+
+Creates a new user account.
+
+#### `POST /add_financial_info`
+
+Adds financial details of a particular user.
 
 ## Contributing
 
-Pull requests are welcome.
+If you would like to contribute, please fork the repository and use a feature branch. Pull requests are warmly welcome.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT
 
 ---
 
-Happy coding! Feel free to reach out for any questions or issues.
+Feel free to adjust as needed!
