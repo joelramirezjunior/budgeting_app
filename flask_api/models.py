@@ -9,14 +9,17 @@ class TransactionSchema(Schema):
     date = fields.DateTime(required=True)
     description = fields.Str()
 
-
-
-class AccountSchema(Schema):
-    first_name = fields.Str(required=True)
-    last_name = fields.Str(required=True)
-    user_name = fields.Str(required=True)
+class FinanceSchema(Schema):
     account_id = fields.Str(required=True)
-    email = fields.Email(required=True)
     retirement_amount = fields.Float(required=False)
     savings = fields.Float(required=False)
     checkings = fields.Float(required=False)
+    # will add support for auto loans in the future
+
+class AccountSchema(Schema):
+    account_id = fields.Str(required=False)
+    first_name = fields.Str(required=True)
+    last_name = fields.Str(required=True)
+    user_name = fields.Str(required=True)
+    password = fields.Str(required=True)
+   

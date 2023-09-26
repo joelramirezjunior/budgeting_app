@@ -9,6 +9,26 @@ body, #root {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+.input-error {
+  border: 1px solid red;
+}
+
+.input-container {
+  width: 90%;
+  display: block;
+  margin: 0;
+}
+
+.input-container input{
+  width: 100%;
+}
+.error-text {
+  font-size: 10px; /* small font size */
+  color: red; /* red color text */
+  display: block; /* make it block-level to force it below the input */
+  margin-top: 5px; /* optional margin at the top to create some space between the input and error message */
+}
+
 /* Styling for the app container */
 .app-container {
   background-color: white;
