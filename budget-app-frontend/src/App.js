@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { BrowserRouter as Router, Route, useNavigate } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';  // Import Link from react-router-dom
+import { BrowserRouter as Router, Route, useNavigate, useLocation } from 'react-router-dom';
 import { Routes} from 'react-router-dom';
 import './App.css'; 
 
@@ -48,15 +48,6 @@ const AccountForm = ({ onSubmit }) => {
       </div>
       <div>
         <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          placeholder="Email"
-        />
-      </div>
-      <div>
-        <input
           type="text"
           name="user_name"
           value={formData.user_name}
@@ -64,17 +55,63 @@ const AccountForm = ({ onSubmit }) => {
           placeholder="Username"
         />
       </div>
+      <div>
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder="Email"
+        />
+      </div>
       <button type="submit">Create Account</button>
     </form>
   );
 };
 
-const AccountInfo = ({ accountInfo }) => {
+const LoginForm = () => {
+  const [loginData, setLoginData] = useState({
+    user_name: '',
+    password: '',
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setLoginData({
+      ...loginData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Handle the login logic here, possibly making an API call.
+    console.log("Attempting to login with data:", loginData);
+  };
+
   return (
-    <div>
-      <h2>Account Information</h2>
-      <p>Account ID: {accountInfo.account_id}</p>
-    </div>
+    
+    <form onSubmit={handleSubmit}>
+      <div>
+        <input
+          type="text"
+          name="user_name"
+          value={loginData.user_name}
+          onChange={handleInputChange}
+          placeholder="Username"
+        />
+      </div>
+      <div>
+        <input
+          type="password"
+          name="password"
+          value={loginData.password}
+          onChange={handleInputChange}
+          placeholder="Password"
+        />
+      </div>
+      <button type="submit">Login</button>
+    </form>
   );
 };
 
@@ -116,8 +153,8 @@ const FinancialForm = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
+    <form className="financeInfo" onSubmit={handleSubmit}>
+      <div >
         <label>Retirement Amount</label>
         <input
           type="number"
@@ -160,9 +197,11 @@ const App = () => {
 
 const AppContent = () => {
   const [accountInfo, setAccountInfo] = useState(null);
-  const navigate = useNavigate();
   
-  const handleSubmit = async (formData) => {
+  const navigate = useNavigate();
+  const location = useLocation();  // Import this from 'react-router-dom'
+
+  const handleCreateAccount = async (formData) => {
     try {
       console.log("Attempting API POST", formData);
       const response = await axios.post('http://127.0.0.1:5000/add_account', formData, {
@@ -181,12 +220,26 @@ const AppContent = () => {
   return (
     <div className="app-container">
       <h1 className="app-title">Budgeting App</h1>
-      <h2>Account Creation</h2>
+      
+
       <Routes>
-        <Route path="/" element={<AccountForm onSubmit={handleSubmit} />} />
+        <Route path="/" element={<AccountForm onSubmit={handleCreateAccount} />} />
+        <Route path="/login" element={<LoginForm />} />
         <Route path="/financial-form" element={<FinancialForm />} />
       </Routes>
-      {/* {accountInfo && <AccountInfo accountInfo={accountInfo} />} */}
+      
+      {(location.pathname === '/login') && (
+        <div className="navigation">
+          <Link to="/">Need to create an account?</Link>
+        </div>
+      )}
+
+      {(location.pathname === '/') && (
+        <div className="navigation">
+          <Link to="/login">Already have an account?</Link>
+        </div>
+      )}
+
     </div>
   );
 };

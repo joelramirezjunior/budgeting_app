@@ -38,7 +38,9 @@ form input {
   padding: 10px;
   border-radius: 5px;
   background-color: #FAF3E0;  /* light sandy color */
+  color: black;
 }
+
 
 /* Style buttons */
 button {
@@ -55,4 +57,36 @@ button {
   font-size: 32px;
   margin-bottom: 20px;
   text-align: left;
+}
+
+
+.navigation {
+  margin-top: 10px;
+}
+
+div a {
+  text-decoration: none;
+  color: black;
+}
+
+
+::placeholder {
+  color: black;  /* change it to any color you like */
+  opacity: 1;  /* this is optional, it sets the opacity of the placeholder */
+}
+
+form.financeInfo div {
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  align-items: center; /* Center items horizontally */
+  justify-content: left; /* Center items vertically */
+}
+form.financeInfo div label{
+  width:100%;
+  display: flex;
+  justify-content: left; /* Center items vertically */
+}
+
+form.financeInfo div input{
+  width: 90%;
 }
