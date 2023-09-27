@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { BrowserRouter as Router, useNavigate, useLocation, Link, Route, Routes } from "react-router-dom";
 import "./App.css";
-import "./constants.js"
+import useAccountAccess from "./useAccountAccess"
 import useInputChange from "./useInputChange";
 
 
@@ -150,7 +150,7 @@ const FinancialForm = () => {
     checkings: "",
     email: email, // set email in financialData
   });
-    
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -212,92 +212,56 @@ const homepage = () => {
 
   
 }
+
+const NavigationLinks = ({ location }) => (
+  <>
+    {location.pathname === "/login" && (
+      <div className="navigation">
+        <Link to="/">Need to create an account?</Link>
+      </div>
+    )}
+
+    {location.pathname === "/" && (
+      <div className="navigation">
+        <Link to="/login">Already have an account?</Link>
+      </div>
+    )}
+  </>
+);
+
+const AppRoutes = ({ handleCreateAccount, handleLogin, accountInfo}) => (
+  <Routes>
+    <Route path="/" element={<AccountForm onSubmit={handleCreateAccount} />} />
+    <Route path="/login" element={<LoginForm onSubmit={handleLogin} />} />
+    <Route path="/financial-form" element={<FinancialForm />} />
+    <Route path="/homepage" element={<DisplayFinances accountInfo={accountInfo}/>} />
+  </Routes>
+);
+
+
+
 const AppContent = () => {
-  const [accountInfo, setAccountInfo] = useState(null);
-
   const navigate = useNavigate();
-  const location = useLocation(); // Import this from 'react-router-dom'
-
-  const handleCreateAccount = async (formData) => {
-    try {
-      console.log("Attempting API POST", formData);
-      const response = await axios.post(
-        addAccount,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response);
-      if (response && response.status === 200) {
-        return null; // return a special value indicating failure
-      }
-
-      setAccountInfo(response.data);
-      navigate("/financial-form", { state: { email: formData.email } });
-      return response; // indicate success
-    } catch (error) {
-      console.error("Error while sending data: ", error);
-      return error; // return the error object
-    }
-  };
-
-  const handleLogin = async (formData) => {
-    try {
-      console.log("Attempting API POST", formData);
-      const response = await axios.post(
-        login,
-        formData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response);
-      if (response && response.status != 200) {
-        return response.status;
-      }
-
-      setAccountInfo(response.data);
-      navigate("/homepage", { state: { user_id: response.user_id } });
-      return response; // indicate success
-    } catch (error) {
-      console.error("Error while sending data: ", error);
-      return error; // return the error object
-    }
-  };
+  const location = useLocation();
+  
+  const [accountInfo, handleCreateAccount, handleLogin] = useAccountAccess(navigate);
 
   return (
     <div className="app-container">
       <h1 className="app-title">Budgeting App</h1>
 
-      <Routes>
-        <Route
-          path="/"
-          element={<AccountForm onSubmit={handleCreateAccount} />}
-        />
-        <Route path="/login" element={<LoginForm onSubmit={handleLogin} />} />
-        <Route path="/financial-form" element={<FinancialForm />} />
-        <Route path="/homepage" element={<DisplayFinances />} />
-      </Routes>
+      <AppRoutes 
+        handleCreateAccount={handleCreateAccount}
+        handleLogin={handleLogin}
+        accountInfo={accountInfo}
+      />
 
-      {location.pathname === "/login" && (
-        <div className="navigation">
-          <Link to="/">Need to create an account?</Link>
-        </div>
-      )}
-
-      {location.pathname === "/" && (
-        <div className="navigation">
-          <Link to="/login">Already have an account?</Link>
-        </div>
-      )}
+      <NavigationLinks location={location} />
     </div>
   );
 };
+
+
 
 const App = () => {
   return (
