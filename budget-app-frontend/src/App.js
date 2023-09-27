@@ -1,17 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom"; // Import Link from react-router-dom
-import {
-  BrowserRouter as Router,
-  Route,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
-import { Routes } from "react-router-dom";
+import { BrowserRouter as Router, useNavigate, useLocation, Link, Route, Routes } from "react-router-dom";
 import "./App.css";
+import "./constants.js"
+import useInputChange from "./useInputChange";
+
 
 const AccountForm = ({ onSubmit }) => {
-  const [formData, setFormData] = useState({
+  const [formData, handleInputChange] = useInputChange({
     first_name: "",
     last_name: "",
     user_name: "",
@@ -19,14 +15,6 @@ const AccountForm = ({ onSubmit }) => {
   });
 
   const [usernameError, setUsernameError] = useState(null); // <-- Step 1: New state for error message
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,7 +76,7 @@ const AccountForm = ({ onSubmit }) => {
 };
 
 const LoginForm = ({ onSubmit }) => {
-  const [loginData, setLoginData] = useState({
+  const [loginData, handleInputChange] = useInputChange({
     user_name: "",
     password: "",
   });
@@ -97,14 +85,6 @@ const LoginForm = ({ onSubmit }) => {
     wrongusername: null,
     wrongpassword: null,
   });
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setLoginData({
-      ...loginData,
-      [name]: value,
-    });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -164,27 +144,20 @@ const FinancialForm = () => {
 
   const email = location.state?.email || ""; // extract email from state
 
-  const [financialData, setFinancialData] = useState({
+  const [financialData, handleInputChange] = useInputChange({
     retirement_amount: "",
     savings: "",
     checkings: "",
     email: email, // set email in financialData
   });
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFinancialData({
-      ...financialData,
-      [name]: value,
-    });
-  };
+    
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Submit to your API endpoint
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/add_financial_info",
+        addFinancialInfo,
         financialData,
         {
           headers: {
@@ -249,7 +222,7 @@ const AppContent = () => {
     try {
       console.log("Attempting API POST", formData);
       const response = await axios.post(
-        "http://127.0.0.1:5000/add_account",
+        addAccount,
         formData,
         {
           headers: {
@@ -275,7 +248,7 @@ const AppContent = () => {
     try {
       console.log("Attempting API POST", formData);
       const response = await axios.post(
-        "http://127.0.0.1:5000/login",
+        login,
         formData,
         {
           headers: {
