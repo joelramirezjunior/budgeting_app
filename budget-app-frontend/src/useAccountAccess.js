@@ -45,7 +45,7 @@ export const useAccountAccess = (navigate) => {
           }
         );
         console.log(response);
-        if (response && response.status != 200) {
+        if (response && response.status !== 200) {
           return response.status;
         }
         setAccountInfo(response.data);

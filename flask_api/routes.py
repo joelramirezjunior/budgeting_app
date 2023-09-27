@@ -1,9 +1,11 @@
 # routes.py
-from flask import jsonify, request, make_response, Response
+from flask import jsonify, request, Response
 import uuid
 import hashlib  # Import hashlib for hashing
-from models import TransactionSchema, AccountSchema
+from models import TransactionSchema, AccountSchema, FinanceSchema
 from app.app import app, mongo
+from statuscodes import ApiResponseStatus
+from utils import generate_response
 
 app.logger.setLevel("INFO")
 
@@ -12,90 +14,107 @@ def log_request_info():
     # Here you can specify what you want to log.
     app.logger.info('Headers: %s', request.headers)
     app.logger.info('Body: %s', request.get_data())
-    if request.method == 'OPTIONS':
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
-        app.logger.info(f"Sending response: {response.get_data(as_text=True)}")
-        return response
 
+    # if request.method == 'OPTIONS':
+    #     return generate_response()
 
-@app.route('/')
-def index():
-    return 'Welcome to your Flask application!'
+from flask import jsonify, request
+from pymongo import ReturnDocument
 
 @app.route('/add_transaction', methods=['POST', 'OPTIONS'])
 def add_transaction():
 
     if request.method == 'OPTIONS':
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response()
         app.logger.info(f"Sending response Trans: {response.get_data(as_text=True)}")
         return response
-    
+
     app.logger.info('%s Request made successfully', request)
     schema = TransactionSchema()
-    transactions = mongo.db.transactions
+    accounts = mongo.db.accounts
+    transactions = mongo.db.transactions  # Assuming you have a transactions collection
     json_data = request.get_json()
-    
-    # Validate incoming data
-    try:
-        data = schema.load(json_data)
-    except:
+
+    if json_data.get("account_id") is None:
         app.logger.info(f'Invalid format of data: {json_data}')
-        return jsonify({"message": "Invalid data"}), 400
+        response = generate_response({'status': ApiResponseStatus.INVALID_DATA, "message": "Invalid data, account_id not sent."}, 400)
+        return response
 
+    account = accounts.find_one({"account_id": json_data["account_id"]})
+
+    if account is None:
+        app.logger.info(f'No user found with id: {json_data["account_id"]}')
+        response = generate_response({'status': ApiResponseStatus.INVALID_DATA, "message": "Invalid data, account_id not found."}, 400)
+        return response
+    
     # Insert into the database
-    transaction_id = transactions.insert_one(data).inserted_id
+    transaction_id = transactions.insert_one(json_data).inserted_id
 
+    # Update the user's transaction history
+    updated_account = accounts.find_one_and_update(
+        {'account_id': json_data['account_id']},
+        {'$push': {'transactions': transaction_id}},  # Append the new transaction_id to the transactions list
+        return_document=ReturnDocument.AFTER
+    )
+    
+    if updated_account is None:
+        app.logger.error("Failed to update account with new transaction")
+        response = generate_response({'status': ApiResponseStatus.UPDATE_UNSUCCESFUL, "message": "Failed to update account with new transaction"}, 500)
+        return response
+    
     # Return serialized data
-    result = schema.dump(data)
-    response = make_response(jsonify({'transaction_id': str(transaction_id), 'transaction': result}), 200)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add('Access-Control-Allow-Headers', "*")
-    response.headers.add('Access-Control-Allow-Methods', "*")
+    result = schema.dump(json_data)
+    response = generate_response({'status': ApiResponseStatus.SUCCESS, 'transaction_id': str(transaction_id), 'transaction': result}, 200)
     return response
 
 @app.route('/add_financial_info', methods=['POST', 'OPTIONS'])
 def add_financial_info():
 
     if request.method == 'OPTIONS':
-        response = make_response()
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response()
         app.logger.info(f"Sending response add_financial_info: {response.get_data(as_text=True)}")
         return response
     
     app.logger.info('%s Request made successfully', request)
 
-    schema = TransactionSchema()
-    transactions = mongo.db.transactions
+    schema = FinanceSchema()
     json_data = request.get_json()
+    finances = mongo.db.finances
+    accounts = mongo.db.accounts
 
-    # Validate incoming data
     try:
-        #We only require the user_id as a schema as a failsafe to make sure 
-        #We only modify their data. Will later turn into session key.
-        data = schema.load(json_data)
+        schema.validate(json_data["finance"])
     except:
         app.logger.info(f'Invalid format of data: {json_data}')
-        response = Response(jsonify({"message": "Invalid data, no ID recieved."}), 400)
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response({'status': ApiResponseStatus.INVALID_DATA, "message": "Invalid data, financial detaisl not sent.."}, 400)
+        return response
+    
+    if json_data.get("account_id") is None:
+        app.logger.info(f'Invalid format of data: {json_data}')
+        response = generate_response({'status': ApiResponseStatus.INVALID_DATA, "message": "Invalid data, account_id not sent."}, 400)
         return response
 
+    account = accounts.find_one({"account_id": json_data["account_id"]})
 
+    if account is None:
+        app.logger.info(f'No user found with id: {json_data["account_id"]}')
+        response = generate_response({'status': ApiResponseStatus.INVALID_DATA, "message": "Invalid data, account_id not found."}, 400)
+        return response
+    
     # Insert into the database
-    transaction_id = transactions.insert_one(data).inserted_id
-    response = Response(jsonify({'transaction_id': str(transaction_id)}), 200)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add('Access-Control-Allow-Headers', "*")
-    response.headers.add('Access-Control-Allow-Methods', "*")
+    finance_id = finances.insert_one(json_data["finance"]).inserted_id
+    updated_account = accounts.find_one_and_update(
+        {'account_id': json_data['account_id']},
+        {'$push': {'finances': finance_id}},  # Append the new transaction_id to the transactions list
+        return_document=ReturnDocument.AFTER
+    )
+
+    if updated_account is None:
+        app.logger.error("Failed to update account with new transaction")
+        response = generate_response({'status': ApiResponseStatus.UPDATE_UNSUCCESFUL, "message": "Failed to update account with new transaction"}, 500)
+        return response
+    
+    response = generate_response(jsonify({'status': ApiResponseStatus.SUCCESS, 'transaction_id': str(finance_id)}), 200)    
     app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
     return response
     
@@ -105,12 +124,9 @@ def add_financial_info():
 @app.route('/add_account', methods=['POST', 'OPTIONS'])
 def add_account():
     print("/add_account Received Request: ", request)
-    response = make_response()
 
     if request.method == 'OPTIONS':
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response()
         app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
         return response
 
@@ -121,10 +137,7 @@ def add_account():
     try:
         data = schema.load(json_data)
     except:
-        response = make_response(jsonify({"message": "Invalid data"}), 400)
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response(jsonify({'status': ApiResponseStatus.INVALID_DATA, "message": "Invalid data, incorrect parameters sent."}), 400)
         app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
         return response
 
@@ -135,10 +148,7 @@ def add_account():
     existing_account = accounts.find_one({"user_name": hashed_username})
 
     if existing_account is not None:
-        response = make_response(jsonify({"message": "Username already exists"}), 200)
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response(jsonify({"status": ApiResponseStatus.USERNAME_EXISTS, "message": "Username already exists"}), 200)
         app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
         return response
 
@@ -150,33 +160,27 @@ def add_account():
     # Hash other sensitive information
     hashed_first_name = hashlib.sha256(data['first_name'].encode()).hexdigest()
     hashed_last_name = hashlib.sha256(data['last_name'].encode()).hexdigest()
-    hashed_email = hashlib.sha256(data['email'].encode()).hexdigest()
+    hashed_password = hashlib.sha256(data['password'].encode()).hexdigest()
 
+    accounts.insert_one(json_data).inserted_id
     # Replace the original fields with hashed values
     data['first_name'] = hashed_first_name
     data['last_name'] = hashed_last_name
-    data['email'] = hashed_email
+    data['password'] = hashed_password
     data['user_name'] = hashed_username
 
-
     # Return serialized data
-    response = make_response(jsonify({'account_id': str(json_data['account_id'])}), 200)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add('Access-Control-Allow-Headers', "*")
-    response.headers.add('Access-Control-Allow-Methods', "*")
+    response = generate_response(jsonify({'status': ApiResponseStatus.SUCCESS, 'account_id': str(json_data['account_id'])}), 200)
     app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
     return response
 
 
 @app.route('/login', methods=['POST', 'OPTIONS'])
-def add_account():
+def login():
     print("/login Received Request: ", request)
-    response = make_response()
 
     if request.method == 'OPTIONS':
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response()
         app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
         return response
 
@@ -191,10 +195,7 @@ def add_account():
 
     if existing_account is None:
         print("User with that username does not exist")
-        response = make_response(jsonify({"message": "Username does not exists"}), 201)
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response(jsonify({'status': ApiResponseStatus.USERNAME_NOT_FOUND, "message": "Username does not exist"}), 400)
         app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
         return response
 
@@ -202,10 +203,7 @@ def add_account():
     hashed_password = hashlib.sha256(data['password'].encode()).hexdigest()
     
     if hashed_password != existing_account.password:
-        response = make_response(jsonify({"message": "Wrong password"}), 203)
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add('Access-Control-Allow-Headers', "*")
-        response.headers.add('Access-Control-Allow-Methods', "*")
+        response = generate_response(jsonify({'status': ApiResponseStatus.WRONG_PASSWORD, "message": "Password is incorrect"}), 400)
         app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
         return response
 
@@ -214,9 +212,6 @@ def add_account():
     # Unique for each person?
     
     # Return serialized data
-    response = make_response(jsonify({'account_id': str(existing_account.account_id)}), 200)
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add('Access-Control-Allow-Headers', "*")
-    response.headers.add('Access-Control-Allow-Methods', "*")
+    response = generate_response(jsonify({'status': ApiResponseStatus.SUCCESS, 'account_id': str(existing_account.account_id)}), 200)
     app.logger.info(f"Sending response add_account: {response.get_data(as_text=True)}")
     return response

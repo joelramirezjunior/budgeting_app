@@ -1,10 +1,16 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { BrowserRouter as Router, useNavigate, useLocation, Link, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  useNavigate,
+  useLocation,
+  Link,
+  Route,
+  Routes,
+} from "react-router-dom";
 import "./App.css";
-import useAccountAccess from "./useAccountAccess"
+import useAccountAccess from "./useAccountAccess";
 import useInputChange from "./useInputChange";
-
+import useSubmitFinancialData from "./useSubmitFinancialData"; // Import the new hook
 
 const AccountForm = ({ onSubmit }) => {
   const [formData, handleInputChange] = useInputChange({
@@ -18,13 +24,16 @@ const AccountForm = ({ onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await onSubmit(formData); // get the returned value or error object
-    if (result === null) {
-      setUsernameError("Username already exists");
-    } else if (result instanceof Error) {
-      // handle other types of errors
-    } else {
-      setUsernameError(null);
+
+    try {
+      const result = await onSubmit(formData); // get the returned value or error object
+      if (result === 200) {
+        setUsernameError("Username already exists");
+      } else {
+        setUsernameError(null);
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -64,7 +73,7 @@ const AccountForm = ({ onSubmit }) => {
       <div>
         <input
           type="password"
-          name="pasword"
+          name="password"
           value={formData.password}
           onChange={handleInputChange}
           placeholder="Password"
@@ -88,16 +97,17 @@ const LoginForm = ({ onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await onSubmit(formData); // get the returned value or error object
-    if (result === 201) {
-      setError({ wrongusername: "Username does not exist" });
-    } else if (result == 202) {
-      setError({ wrongpassword: "Password supplied is incorrect" });
-    } else if (result instanceof Error) {
-      console.log(result);
-    } else {
-      setError(null);
-      setPasswordError(null);
+    try {
+      const result = await onSubmit(loginData); // get the returned value or error object
+      if (result === 201) {
+        setError({ wrongusername: "Username does not exist" });
+      } else if (result === 202) {
+        setError({ wrongpassword: "Password supplied is incorrect" });
+      } else {
+        setError({ wrongusername: null, wrongpassword: null });
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -127,10 +137,10 @@ const LoginForm = ({ onSubmit }) => {
             value={loginData.password}
             onChange={handleInputChange}
             placeholder="Password"
-            className={loginError.wrongusername ? "input-error" : ""} // <-- change the class conditionally
+            className={loginError.password ? "input-error" : ""} // <-- change the class conditionally
           />
-          {loginError.wrongusername && (
-            <span className="error-text">{loginError.wrongusername}</span>
+          {loginError.wrongpassword && (
+            <span className="error-text">{loginError.wrongpassword}</span>
           )}{" "}
         </div>
       </div>
@@ -139,33 +149,23 @@ const LoginForm = ({ onSubmit }) => {
   );
 };
 
-const FinancialForm = () => {
+const FinancialForm = ({ accountInfo }) => {
   const location = useLocation();
-
-  const email = location.state?.email || ""; // extract email from state
 
   const [financialData, handleInputChange] = useInputChange({
     retirement_amount: "",
     savings: "",
     checkings: "",
-    email: email, // set email in financialData
+    account_id: accountInfo.account_id,
   });
 
+  const handleSubmitFinancialData = useSubmitFinancialData(); // Use the new hook
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Submit to your API endpoint
     try {
-      const response = await axios.post(
-        addFinancialInfo,
-        financialData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      console.log(response.data);
+      const data = await handleSubmitFinancialData(financialData); // Use the function from the hook
+      console.log(data);
     } catch (error) {
       console.error("Error while sending financial data:", error);
     }
@@ -205,14 +205,13 @@ const FinancialForm = () => {
   );
 };
 
-const homepage = () => {
-
-
-
-
-  
-}
-
+const DisplayFinances = ({ accountInfo }) => {
+  return (
+    <div>
+      {accountInfo}
+    </div>
+  );
+};
 const NavigationLinks = ({ location }) => (
   <>
     {location.pathname === "/login" && (
@@ -229,28 +228,33 @@ const NavigationLinks = ({ location }) => (
   </>
 );
 
-const AppRoutes = ({ handleCreateAccount, handleLogin, accountInfo}) => (
+const AppRoutes = ({ handleCreateAccount, handleLogin, accountInfo }) => (
   <Routes>
     <Route path="/" element={<AccountForm onSubmit={handleCreateAccount} />} />
     <Route path="/login" element={<LoginForm onSubmit={handleLogin} />} />
-    <Route path="/financial-form" element={<FinancialForm />} />
-    <Route path="/homepage" element={<DisplayFinances accountInfo={accountInfo}/>} />
+    <Route
+      path="/financial-form"
+      element={<FinancialForm accountInfo={accountInfo} />}
+    />
+    <Route
+      path="/homepage"
+      element={<DisplayFinances accountInfo={accountInfo} />}
+    />
   </Routes>
 );
-
-
 
 const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  
-  const [accountInfo, handleCreateAccount, handleLogin] = useAccountAccess(navigate);
+
+  const [accountInfo, handleCreateAccount, handleLogin] =
+    useAccountAccess(navigate);
 
   return (
     <div className="app-container">
       <h1 className="app-title">Budgeting App</h1>
 
-      <AppRoutes 
+      <AppRoutes
         handleCreateAccount={handleCreateAccount}
         handleLogin={handleLogin}
         accountInfo={accountInfo}
@@ -260,8 +264,6 @@ const AppContent = () => {
     </div>
   );
 };
-
-
 
 const App = () => {
   return (
