@@ -1,6 +1,9 @@
 # Budgeting App
 
-A simple budgeting application built using React, Flask, and MongoDB. The application allows users to create accounts and add financial information for better budgeting.
+A simple budgeting application built using React, Flask, and MongoDB. The application allows users to create accounts and add financial information for better budgeting. Currently a work in progress. The new designs have not been implemented yet but will be very very soon. Thanks for checking this out! 
+
+![image](./design-prototype/signup.png)
+![image](./design-prototype/home.png)
 
 ## Features
 
